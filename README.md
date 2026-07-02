@@ -10,9 +10,8 @@ Location: `~/.copilot/hooks/`
 | **2. User-level shell guardrails** | `~/.copilot/hooks/copilot-shell-guardrails.json` | All repos, all sessions | Gates `gh`, `az`, and `git` CLI commands via popup/CLI prompt |
 | **3. User-level waiting notifications** | `~/.copilot/hooks/copilot-notify.json` | All repos, all sessions | Plays a sound and shows a tray notification when Copilot is waiting for input |
 | **4. User-level question notifications** | `~/.copilot/hooks/copilot-question-notify.json` | All repos, all sessions | Plays a sound and shows a tray notification when the agent asks you a question (`ask_user`) |
-| **5. Repo-level PA guardrails** | `.github/hooks/pa-guardrails.json` | This repo only | Gates mailtools/calendartools MCP tools |
 
-All layers are **additive** (user hooks fire first, then repo hooks). They are scoped to different hook events/tool names so there is **no double-fire**.
+All layers are **additive** and are scoped to different hook events/tool names so there is **no double-fire**.
 
 ## Feature Flags (`hook-features.json`)
 

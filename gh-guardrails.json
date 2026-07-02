@@ -118,10 +118,10 @@
       "reason": "Run cancellation/rerun affects in-flight CI"
     },
     {
-      "$comment": "ALLOW: issue mutations — Ralph and agents manage the project board autonomously",
+      "$comment": "ALLOW: issue mutations — agents manage the project board autonomously",
       "action": "allow",
       "pattern": "gh\\s+issue\\s+(close|delete|edit|reopen|transfer|create)\\b",
-      "reason": "Issue lifecycle management allowed for Ralph watch and agents"
+      "reason": "Issue lifecycle management allowed for automation and agents"
     },
     {
       "$comment": "ASK: repo create/fork/rename",

@@ -14,8 +14,6 @@
 
     Phase 2 (gate enforcement):
       Get-GateConfig       — reads ~/.copilot/config.json hooks section; safe defaults
-      Test-IsGatedTool     — returns $true if tool is in the 18-tool gated list
-      Test-IsSendFamily    — returns $true for the 8 send/reply/forward tools
       Write-GateDecision   — writes compact JSON decision to stdout
 
     Dot-source at the top of each hook script:
@@ -445,86 +443,6 @@ function Get-GateConfig {
         Write-Verbose "Get-GateConfig: error reading config — $($_.Exception.Message) — using defaults"
         return $defaults
     }
-}
-
-function Test-IsGatedTool {
-    <#
-    .SYNOPSIS
-        Returns $true if ToolName is in the list of 18 gated tools.
-    .DESCRIPTION
-        Checks against a hardcoded array of 18 gated tool names (single source
-        of truth at runtime). This list must match pa-guardrails.json matchers.
-        Gated tools include all mailtools send/reply/forward/delete operations
-        and all calendartools mutating operations.
-    .PARAMETER ToolName
-        The tool name to test.
-    .OUTPUTS
-        [bool]
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$ToolName
-    )
-
-    $gatedTools = @(
-        # Mail — send / reply / forward
-        'mailtools-SendEmailWithAttachments',
-        'mailtools-SendDraftMessage',
-        'mailtools-ReplyToMessage',
-        'mailtools-ReplyAllToMessage',
-        'mailtools-ReplyWithFullThread',
-        'mailtools-ReplyAllWithFullThread',
-        'mailtools-ForwardMessage',
-        'mailtools-ForwardMessageWithFullThread',
-        # Mail — destructive
-        'mailtools-DeleteMessage',
-        'mailtools-DeleteAttachment',
-        # Calendar — all mutations
-        'calendartools-CreateEvent',
-        'calendartools-CancelEvent',
-        'calendartools-DeleteEventById',
-        'calendartools-AcceptEvent',
-        'calendartools-DeclineEvent',
-        'calendartools-TentativelyAcceptEvent',
-        'calendartools-UpdateEvent',
-        'calendartools-ForwardEvent'
-    )
-
-    return $gatedTools -contains $ToolName
-}
-
-function Test-IsSendFamily {
-    <#
-    .SYNOPSIS
-        Returns $true if ToolName is one of the 8 send/reply/forward tools.
-    .DESCRIPTION
-        The send family is the subset of gated tools for which quiet hours apply.
-        Delete operations and calendar mutations are gated but NOT send-family —
-        quiet hours block applies only to active outbound communication.
-    .PARAMETER ToolName
-        The tool name to test.
-    .OUTPUTS
-        [bool]
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$ToolName
-    )
-
-    $sendFamilyTools = @(
-        'mailtools-SendEmailWithAttachments',
-        'mailtools-SendDraftMessage',
-        'mailtools-ReplyToMessage',
-        'mailtools-ReplyAllToMessage',
-        'mailtools-ReplyWithFullThread',
-        'mailtools-ReplyAllWithFullThread',
-        'mailtools-ForwardMessage',
-        'mailtools-ForwardMessageWithFullThread'
-    )
-
-    return $sendFamilyTools -contains $ToolName
 }
 
 function Write-GateDecision {
