@@ -1,0 +1,16 @@
+{
+  "$comment": "User-level question notification hook. Fires on preToolUse for the ask_user tool — i.e. whenever the agent prompts you with a question that requires input. Plays the Windows Question sound and shows a tray balloon. Shares the cooldown state file with copilot-notify.json so a single attention moment never double-pings. Always exit 0 and emits nothing to stdout (fail-open; default-allow). PA_HOOK_QUESTION_DISABLE=1 silences only this; PA_HOOK_NOTIFY_DISABLE=1 silences all; PA_HOOK_NOTIFY_FORCE=1 bypasses cooldown.",
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "$comment": "Notify when the agent asks the user a question (ask_user tool)",
+        "type": "command",
+        "command": "pwsh -NoProfile -File %USERPROFILE%\\.copilot\\hooks\\scripts\\Notify-Question.ps1",
+        "powershell": "pwsh -NoProfile -File $env:USERPROFILE\\.copilot\\hooks\\scripts\\Notify-Question.ps1",
+        "timeoutSec": 5,
+        "matcher": "^ask_user$"
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$comment": "User-level hook feature flags. Toggle individual hook capabilities WITHOUT editing scripts. Every flag defaults to true (current behavior) when this file is missing, empty, malformed, or a key is absent — disabling a feature requires setting it explicitly to false here. Env vars override this file for notification features only: PA_HOOK_FEATURE_<DOTTED_NAME_UPPER_WITH_UNDERSCORES>=0/1 (e.g. PA_HOOK_FEATURE_NOTIFICATIONS_CLICKBACK=0). shellGuardrails.* features IGNORE env overrides — the shell command gate cannot be disabled via an environment variable; edit this file to toggle it. Legacy notification env vars (PA_HOOK_NOTIFY_DISABLE) still work. Changes take effect on the NEXT hook invocation — no Copilot restart required.",
+  "version": 1,
+  "features": {
+    "notifications": {
+      "$comment": "Layer 3 (waiting) + Layer 4 (question) tray/toast notifications.",
+      "enabled": true,
+      "richContext": true,
+      "promptSnippet": true,
+      "clickback": true,
+      "burntToast": true,
+      "trayBalloonFallback": true
+    },
+    "shellGuardrails": {
+      "$comment": "Layer 2 gh/az/git shell command gate. 'enabled'=false allows all shell commands (gate off). 'prompts'=false runs audit-only: 'ask' rules auto-allow but are still logged; hard 'deny' rules (e.g. git history rewrite) remain enforced for safety.",
+      "enabled": true,
+      "prompts": true
+    }
+  }
+}

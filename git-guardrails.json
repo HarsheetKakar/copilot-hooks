@@ -1,0 +1,307 @@
+{
+  "$comment": "User-level git CLI guardrails. First-match-wins rule list. Default posture: ALLOW unmatched. Project directive: 'Never rewrite git history' — history-rewriting commands are DENY (not ASK). Loaded by Gate-ShellCommands.ps1 at preToolUse time.",
+  "version": 1,
+  "defaultAction": "allow",
+  "rules": [
+    {
+      "$comment": "DENY: force-push to protected branches — destroys shared history",
+      "action": "deny",
+      "pattern": "git\\s+push\\s+.*(-f|--force|--force-with-lease).*\\s+(main|master|develop|release\\/\\S+)\\b",
+      "reason": "BLOCKED: Force-push to protected branch rewrites shared history (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: force-push to protected branches (branch before flag)",
+      "action": "deny",
+      "pattern": "git\\s+push\\s+\\S+\\s+(main|master|develop|release\\/\\S+)\\s+.*(-f|--force|--force-with-lease)",
+      "reason": "BLOCKED: Force-push to protected branch rewrites shared history (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: delete protected branches on remote",
+      "action": "deny",
+      "pattern": "git\\s+push\\s+.*--delete\\s+(main|master|develop|release\\/\\S+)",
+      "reason": "BLOCKED: Deleting protected branch on remote (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: delete protected branches on remote (colon syntax)",
+      "action": "deny",
+      "pattern": "git\\s+push\\s+\\S+\\s+:(main|master|develop|release\\/\\S+)",
+      "reason": "BLOCKED: Deleting protected branch on remote via :branch syntax (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: filter-branch — bulk history rewrite",
+      "action": "deny",
+      "pattern": "git\\s+filter-branch\\b",
+      "reason": "BLOCKED: git filter-branch rewrites repository history (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: git-filter-repo — newer bulk history rewrite tool",
+      "action": "deny",
+      "pattern": "git\\s+filter-repo\\b",
+      "reason": "BLOCKED: git filter-repo rewrites repository history (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: reflog expire --expire=now --all — destroys recovery safety net",
+      "action": "deny",
+      "pattern": "git\\s+reflog\\s+expire\\s+.*--expire=now",
+      "reason": "BLOCKED: Expiring reflog destroys the recovery safety net (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: gc --prune=now — destroys unreachable objects immediately",
+      "action": "deny",
+      "pattern": "git\\s+gc\\s+.*--prune=now",
+      "reason": "BLOCKED: gc --prune=now destroys unreachable objects immediately, removing recovery options"
+    },
+    {
+      "$comment": "DENY: update-ref -d on protected branches — direct ref deletion",
+      "action": "deny",
+      "pattern": "git\\s+update-ref\\s+-d\\s+refs\\/heads\\/(main|master|develop)",
+      "reason": "BLOCKED: Direct ref deletion on protected branch (project directive: never rewrite git history)"
+    },
+    {
+      "$comment": "DENY: push --mirror — overwrites ALL remote refs",
+      "action": "deny",
+      "pattern": "git\\s+push\\s+--mirror",
+      "reason": "BLOCKED: push --mirror overwrites all remote refs including protected branches"
+    },
+    {
+      "$comment": "DENY: bare force-push with no explicit branch (DEF-8 — target unknown, fail safe)",
+      "action": "deny",
+      "pattern": "git\\s+push\\s+(-f|--force|--force-with-lease)\\s*$",
+      "reason": "BLOCKED: bare force-push with no branch specified — cannot confirm target is non-protected"
+    },
+    {
+      "$comment": "ALLOW: read-only commands — short-circuit before ASK rules (branch/tag/remote removed: their destructive variants must reach ASK rules below)",
+      "action": "allow",
+      "pattern": "git\\s+(status|log|diff|show|blame|reflog|describe|rev-parse|rev-list|ls-files|ls-tree|cat-file|grep|shortlog|whatchanged|bisect)\\b",
+      "reason": "Read-only operation"
+    },
+    {
+      "$comment": "ALLOW: config --get (read-only config access)",
+      "action": "allow",
+      "pattern": "git\\s+config\\s+--get",
+      "reason": "Read-only config lookup"
+    },
+    {
+      "$comment": "ALLOW: config --list (read-only config access)",
+      "action": "allow",
+      "pattern": "git\\s+config\\s+(-l|--list)",
+      "reason": "Read-only config listing"
+    },
+    {
+      "$comment": "ALLOW: git add (staging is reversible)",
+      "action": "allow",
+      "pattern": "git\\s+add\\b",
+      "reason": "Staging is fully reversible"
+    },
+    {
+      "$comment": "ALLOW: git commit without --amend (normal commit)",
+      "action": "allow",
+      "pattern": "git\\s+commit\\s+(?!.*--amend)",
+      "reason": "Normal commit — no history rewrite"
+    },
+    {
+      "$comment": "ASK: git push without force/delete/mirror — user directive: every push asks, no silent ALLOW (\\b handles bare 'git push' with no args)",
+      "action": "ask",
+      "pattern": "git\\s+push\\b(?!\\s+.*(-f|--force|--force-with-lease|--delete|--mirror))",
+      "reason": "Confirm before pushing to remote (user directive: every push asks)"
+    },
+    {
+      "$comment": "ALLOW: git pull (normal pull)",
+      "action": "allow",
+      "pattern": "git\\s+pull\\b",
+      "reason": "Normal pull"
+    },
+    {
+      "$comment": "ALLOW: git fetch (read-only remote sync)",
+      "action": "allow",
+      "pattern": "git\\s+fetch\\b",
+      "reason": "Fetch is read-only"
+    },
+    {
+      "$comment": "ALLOW: git checkout/switch to a branch (DEF-4: exclude dot and dot-prefix restore patterns)",
+      "action": "allow",
+      "pattern": "git\\s+(checkout|switch)\\s+(?!--|\\.($|\\s))[\\w\\-./]+$",
+      "reason": "Branch switch is safe"
+    },
+    {
+      "$comment": "ALLOW: git merge (normal merge, not --strategy=ours)",
+      "action": "allow",
+      "pattern": "git\\s+merge\\s+(?!.*--strategy=ours)\\S+",
+      "reason": "Normal merge"
+    },
+    {
+      "$comment": "ALLOW: git stash (save only)",
+      "action": "allow",
+      "pattern": "git\\s+stash\\s*(push|save|$|\\s+-)",
+      "reason": "Stashing is reversible"
+    },
+    {
+      "$comment": "ALLOW: git stash pop/apply (restore stash)",
+      "action": "allow",
+      "pattern": "git\\s+stash\\s+(pop|apply|list|show)",
+      "reason": "Stash restore/inspect is safe"
+    },
+    {
+      "$comment": "ALLOW: git tag (create, without -d)",
+      "action": "allow",
+      "pattern": "git\\s+tag\\s+(?!.*-d)\\S+",
+      "reason": "Tag creation is safe"
+    },
+    {
+      "$comment": "ALLOW: git init, clone",
+      "action": "allow",
+      "pattern": "git\\s+(init|clone)\\b",
+      "reason": "Repository initialization/cloning is safe"
+    },
+    {
+      "$comment": "ALLOW: git --version, help",
+      "action": "allow",
+      "pattern": "git\\s+(--version|help|--help)",
+      "reason": "Informational command"
+    },
+    {
+      "$comment": "ALLOW: git merge --abort (undo in-progress merge)",
+      "action": "allow",
+      "pattern": "git\\s+merge\\s+--abort",
+      "reason": "Aborting a merge is safe"
+    },
+    {
+      "$comment": "ALLOW: git rebase --abort (undo in-progress rebase)",
+      "action": "allow",
+      "pattern": "git\\s+rebase\\s+--abort",
+      "reason": "Aborting a rebase is safe"
+    },
+    {
+      "$comment": "ASK: force-push to non-protected branches",
+      "action": "ask",
+      "pattern": "git\\s+push\\s+.*(-f|--force|--force-with-lease)",
+      "reason": "Force-push can overwrite remote history — confirm target branch"
+    },
+    {
+      "$comment": "ASK: git reset --hard (discards working changes and commits)",
+      "action": "ask",
+      "pattern": "git\\s+reset\\s+--hard",
+      "reason": "Hard reset discards uncommitted changes and can lose commits"
+    },
+    {
+      "$comment": "ASK: git clean -fd/-fdx (remove untracked files)",
+      "action": "ask",
+      "pattern": "git\\s+clean\\s+.*-f",
+      "reason": "git clean permanently removes untracked files"
+    },
+    {
+      "$comment": "ASK: git checkout -- (discard working changes)",
+      "action": "ask",
+      "pattern": "git\\s+checkout\\s+--\\s+",
+      "reason": "Discards uncommitted changes to specified files"
+    },
+    {
+      "$comment": "ASK: git checkout . (discard all working changes)",
+      "action": "ask",
+      "pattern": "git\\s+checkout\\s+\\.$",
+      "reason": "Discards all uncommitted working tree changes"
+    },
+    {
+      "$comment": "ASK: git restore with --worktree (discard changes)",
+      "action": "ask",
+      "pattern": "git\\s+restore\\s+.*--worktree",
+      "reason": "Restoring worktree discards uncommitted changes"
+    },
+    {
+      "$comment": "ASK: git branch -D (force delete branch)",
+      "action": "ask",
+      "pattern": "git\\s+branch\\s+-D\\b",
+      "reason": "Force-deleting a branch may lose unmerged commits"
+    },
+    {
+      "$comment": "ASK: git branch -d (non-force delete — DEF-1: was bypassed by read-only ALLOW; branch removed from that pattern)",
+      "action": "ask",
+      "pattern": "git\\s+branch\\s+-d\\b",
+      "reason": "Deleting a merged branch removes the local ref — confirm intent"
+    },
+    {
+      "$comment": "ASK: git branch -m/-M (rename or force-rename — DEF-1: was bypassed by read-only ALLOW)",
+      "action": "ask",
+      "pattern": "git\\s+branch\\s+-[mM]\\b",
+      "reason": "Renaming a branch (-M force-renames, discarding the target if it exists)"
+    },
+    {
+      "$comment": "ASK: git tag -d (delete tag)",
+      "action": "ask",
+      "pattern": "git\\s+tag\\s+-d\\b",
+      "reason": "Deleting a tag removes a named reference"
+    },
+    {
+      "$comment": "ASK: git push --delete tags (remote tag deletion)",
+      "action": "ask",
+      "pattern": "git\\s+push\\s+.*--delete.*tag",
+      "reason": "Deleting remote tags affects release references"
+    },
+    {
+      "$comment": "ASK: git rebase (interactive or otherwise — rewrites local history)",
+      "action": "ask",
+      "pattern": "git\\s+rebase\\b(?!\\s+--abort)",
+      "reason": "Rebase rewrites commit history (confirm scope)"
+    },
+    {
+      "$comment": "ASK: git cherry-pick (can introduce conflicts/duplication)",
+      "action": "ask",
+      "pattern": "git\\s+cherry-pick\\b",
+      "reason": "Cherry-pick duplicates commits and may cause conflicts"
+    },
+    {
+      "$comment": "ASK: git stash drop/clear (destroys stashed changes)",
+      "action": "ask",
+      "pattern": "git\\s+stash\\s+(drop|clear)\\b",
+      "reason": "Dropping/clearing stash permanently discards saved changes"
+    },
+    {
+      "$comment": "ASK: git remote remove/rm (removes remote config)",
+      "action": "ask",
+      "pattern": "git\\s+remote\\s+(remove|rm)\\b",
+      "reason": "Removing a remote deletes its tracking configuration"
+    },
+    {
+      "$comment": "ASK: git config --global (modifies user-wide config)",
+      "action": "ask",
+      "pattern": "git\\s+config\\s+--global",
+      "reason": "Modifying global git config affects all repositories"
+    },
+    {
+      "$comment": "ASK: git submodule deinit (removes submodule)",
+      "action": "ask",
+      "pattern": "git\\s+submodule\\s+deinit\\b",
+      "reason": "Deinitializing a submodule removes its working tree"
+    },
+    {
+      "$comment": "ASK: git worktree remove",
+      "action": "ask",
+      "pattern": "git\\s+worktree\\s+remove\\b",
+      "reason": "Removing a worktree deletes its working tree"
+    },
+    {
+      "$comment": "ASK: git commit --amend (rewrites last commit)",
+      "action": "ask",
+      "pattern": "git\\s+commit\\s+.*--amend",
+      "reason": "Amending rewrites the last commit (history modification)"
+    },
+    {
+      "$comment": "ASK: git revert (creates reversal commit — confirm intent)",
+      "action": "ask",
+      "pattern": "git\\s+revert\\b",
+      "reason": "Revert creates a new commit undoing changes — confirm intent"
+    },
+    {
+      "$comment": "ASK: git merge --strategy=ours (silently discards incoming changes)",
+      "action": "ask",
+      "pattern": "git\\s+merge\\s+.*--strategy=ours",
+      "reason": "Merge strategy 'ours' silently discards all incoming changes"
+    },
+    {
+      "$comment": "ASK: git push --delete (non-protected branch deletion on remote)",
+      "action": "ask",
+      "pattern": "git\\s+push\\s+.*--delete",
+      "reason": "Deleting a remote branch — confirm intent"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "$comment": "User-level shell command guardrails. Gates gh, az, and git CLI invocations via Gate-ShellCommands.ps1 before execution. Matches the 'powershell' and 'bash' tool names (shell tools used by Copilot CLI). timeoutSec=130 accommodates popup wait (120s) + script overhead (10s). The shell gate is non-bypassable by design — there is no env-var escape hatch. Rule files: gh-guardrails.json, az-guardrails.json, and git-guardrails.json in the hooks root. Paths use env-var expansion ($env:USERPROFILE / %USERPROFILE%) for portability.",
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "$comment": "Gate powershell tool — covers all shell commands on Windows",
+        "type": "command",
+        "command": "pwsh -NoProfile -File %USERPROFILE%\\.copilot\\hooks\\scripts\\Gate-ShellCommands.ps1",
+        "powershell": "pwsh -NoProfile -File $env:USERPROFILE\\.copilot\\hooks\\scripts\\Gate-ShellCommands.ps1",
+        "timeoutSec": 130,
+        "matcher": "^powershell$"
+      },
+      {
+        "$comment": "Gate bash tool — covers shell commands if bash tool is used",
+        "type": "command",
+        "command": "pwsh -NoProfile -File %USERPROFILE%\\.copilot\\hooks\\scripts\\Gate-ShellCommands.ps1",
+        "powershell": "pwsh -NoProfile -File $env:USERPROFILE\\.copilot\\hooks\\scripts\\Gate-ShellCommands.ps1",
+        "timeoutSec": 130,
+        "matcher": "^bash$"
+      }
+    ]
+  }
+}

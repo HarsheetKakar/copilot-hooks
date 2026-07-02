@@ -1,0 +1,133 @@
+{
+  "$comment": "User-level gh CLI guardrails. First-match-wins rule list. Default posture: ALLOW unmatched commands. Loaded by Gate-ShellCommands.ps1 at preToolUse time. Edit rules here; restart Copilot CLI session for changes to take effect.",
+  "version": 1,
+  "defaultAction": "allow",
+  "rules": [
+    {
+      "$comment": "DENY: catastrophic — any gh repo delete is irreversible (DEF-6: promoted from ASK; GH interactive prompt is not a reliable safety net when agent is scripted)",
+      "action": "deny",
+      "pattern": "gh\\s+repo\\s+delete\\b",
+      "reason": "Catastrophic: repository deletion is irreversible — use GitHub web UI with MFA"
+    },
+    {
+      "$comment": "DENY: credential exfiltration — gh auth token prints bearer token to stdout",
+      "action": "deny",
+      "pattern": "gh\\s+auth\\s+token",
+      "reason": "Credential exfiltration: gh auth token exposes bearer token"
+    },
+    {
+      "$comment": "DENY: gh api with destructive HTTP methods — bypasses verb-level rules",
+      "action": "deny",
+      "pattern": "gh\\s+api\\s+.*-X\\s+(DELETE|PUT|PATCH|POST)",
+      "reason": "gh api with mutating HTTP method bypasses command-level guardrails"
+    },
+    {
+      "$comment": "DENY: gh api --method with destructive verbs",
+      "action": "deny",
+      "pattern": "gh\\s+api\\s+.*--method\\s+(DELETE|PUT|PATCH|POST)",
+      "reason": "gh api with mutating --method bypasses command-level guardrails"
+    },
+    {
+      "$comment": "ALLOW: read-only operations — short-circuit before ASK rules",
+      "action": "allow",
+      "pattern": "gh\\s+(pr|issue|repo|run|release|workflow|search)\\s+(list|view|status|checks|diff)\\b",
+      "reason": "Read-only operation"
+    },
+    {
+      "$comment": "ALLOW: gh api with GET (explicit safe method)",
+      "action": "allow",
+      "pattern": "gh\\s+api\\s+.*-X\\s+GET",
+      "reason": "Read-only API call"
+    },
+    {
+      "$comment": "ALLOW: auth status, version, help",
+      "action": "allow",
+      "pattern": "gh\\s+(auth\\s+status|--version|help|--help)",
+      "reason": "Non-mutating informational command"
+    },
+    {
+      "$comment": "ALLOW: gh pr list/view/diff/checks variants",
+      "action": "allow",
+      "pattern": "gh\\s+pr\\s+(list|view|diff|checks|ready)\\b",
+      "reason": "Read-only PR operation"
+    },
+    {
+      "$comment": "ALLOW: gh issue list/view",
+      "action": "allow",
+      "pattern": "gh\\s+issue\\s+(list|view|status)\\b",
+      "reason": "Read-only issue operation"
+    },
+    {
+      "$comment": "ASK: PR merge — significant repo-mutating action",
+      "action": "ask",
+      "pattern": "gh\\s+pr\\s+merge\\b",
+      "reason": "PR merge modifies the target branch permanently"
+    },
+    {
+      "$comment": "ASK: PR close",
+      "action": "ask",
+      "pattern": "gh\\s+pr\\s+close\\b",
+      "reason": "Closing a PR discards the review context"
+    },
+    {
+      "$comment": "ASK: repo archive/unarchive",
+      "action": "ask",
+      "pattern": "gh\\s+repo\\s+(archive|unarchive)\\b",
+      "reason": "Archiving a repo locks it from further contributions"
+    },
+    {
+      "$comment": "ASK: repo edit — visibility, name, description, settings mutations (DEF-5: was uncovered, fell to default allow)",
+      "action": "ask",
+      "pattern": "gh\\s+repo\\s+edit\\b",
+      "reason": "Repository settings change (visibility, name, topics) — confirm intent"
+    },
+    {
+      "$comment": "ASK: release delete/create",
+      "action": "ask",
+      "pattern": "gh\\s+release\\s+(delete|create)\\b",
+      "reason": "Release mutations affect published artifacts"
+    },
+    {
+      "$comment": "ASK: secret management",
+      "action": "ask",
+      "pattern": "gh\\s+secret\\s+(set|remove|delete)\\b",
+      "reason": "Secret mutations affect CI/CD security posture"
+    },
+    {
+      "$comment": "ASK: auth login/logout — changes credential state",
+      "action": "ask",
+      "pattern": "gh\\s+auth\\s+(login|logout)\\b",
+      "reason": "Auth mutations affect all subsequent gh operations"
+    },
+    {
+      "$comment": "ASK: SSH/GPG key management",
+      "action": "ask",
+      "pattern": "gh\\s+(ssh-key|gpg-key)\\s+(add|delete)\\b",
+      "reason": "Key mutations affect authentication trust chain"
+    },
+    {
+      "$comment": "ASK: workflow enable/disable",
+      "action": "ask",
+      "pattern": "gh\\s+workflow\\s+(disable|enable|run)\\b",
+      "reason": "Workflow state mutations affect CI pipeline behavior"
+    },
+    {
+      "$comment": "ASK: run cancel",
+      "action": "ask",
+      "pattern": "gh\\s+run\\s+(cancel|rerun)\\b",
+      "reason": "Run cancellation/rerun affects in-flight CI"
+    },
+    {
+      "$comment": "ALLOW: issue mutations — Ralph and agents manage the project board autonomously",
+      "action": "allow",
+      "pattern": "gh\\s+issue\\s+(close|delete|edit|reopen|transfer|create)\\b",
+      "reason": "Issue lifecycle management allowed for Ralph watch and agents"
+    },
+    {
+      "$comment": "ASK: repo create/fork/rename",
+      "action": "ask",
+      "pattern": "gh\\s+repo\\s+(create|fork|rename)\\b",
+      "reason": "Repo creation/fork/rename is a significant org-level action"
+    }
+  ]
+}

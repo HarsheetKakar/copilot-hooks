@@ -1,0 +1,163 @@
+{
+  "$comment": "User-level Azure CLI guardrails. First-match-wins rule list. Default posture: ALLOW unmatched commands. Loaded by Gate-ShellCommands.ps1 at preToolUse time. Edit rules here; restart Copilot CLI session for changes to take effect.",
+  "version": 1,
+  "defaultAction": "allow",
+  "rules": [
+    {
+      "$comment": "DENY: fire-and-forget resource group destruction — irreversible, no confirmation prompt",
+      "action": "deny",
+      "pattern": "az\\s+group\\s+delete\\s+.*--yes\\s+.*--no-wait",
+      "reason": "Catastrophic: fire-and-forget resource group deletion (--yes --no-wait)"
+    },
+    {
+      "$comment": "DENY: same pattern reversed flag order",
+      "action": "deny",
+      "pattern": "az\\s+group\\s+delete\\s+.*--no-wait\\s+.*--yes",
+      "reason": "Catastrophic: fire-and-forget resource group deletion (--no-wait --yes)"
+    },
+    {
+      "$comment": "DENY: az rest with destructive methods — bypasses verb-level rules",
+      "action": "deny",
+      "pattern": "az\\s+rest\\s+.*--method\\s+(delete|put|patch|post)",
+      "reason": "az rest with mutating method bypasses command-level guardrails"
+    },
+    {
+      "$comment": "ALLOW: read-only operations — list/show/get across all services",
+      "action": "allow",
+      "pattern": "az\\s+(account|group|vm|storage|keyvault|aks|sql|functionapp|webapp|role|ad|devops|repos|pipelines|boards|network|monitor|resource)\\s+(list|show|get)\\b",
+      "reason": "Read-only operation"
+    },
+    {
+      "$comment": "ALLOW: az account show (common status check)",
+      "action": "allow",
+      "pattern": "az\\s+account\\s+show\\b",
+      "reason": "Read-only account info"
+    },
+    {
+      "$comment": "ALLOW: az --version, az help, az find",
+      "action": "allow",
+      "pattern": "az\\s+(--version|help|--help|find)\\b",
+      "reason": "Non-mutating informational command"
+    },
+    {
+      "$comment": "ALLOW: az configure (local config, not destructive)",
+      "action": "allow",
+      "pattern": "az\\s+configure\\b",
+      "reason": "Local configuration only"
+    },
+    {
+      "$comment": "ASK: subscription switch — changes context for all subsequent commands",
+      "action": "ask",
+      "pattern": "az\\s+account\\s+set\\b",
+      "reason": "Subscription switch changes context for all subsequent az commands"
+    },
+    {
+      "$comment": "ASK: auth mutations",
+      "action": "ask",
+      "pattern": "az\\s+(login|logout)\\b",
+      "reason": "Auth state change affects all subsequent Azure operations"
+    },
+    {
+      "$comment": "ASK: resource group delete",
+      "action": "ask",
+      "pattern": "az\\s+group\\s+delete\\b",
+      "reason": "Resource group deletion destroys all contained resources"
+    },
+    {
+      "$comment": "ASK: VM lifecycle mutations",
+      "action": "ask",
+      "pattern": "az\\s+vm\\s+(delete|deallocate|stop|restart)\\b",
+      "reason": "VM lifecycle operation affects running workloads"
+    },
+    {
+      "$comment": "ASK: storage account delete",
+      "action": "ask",
+      "pattern": "az\\s+storage\\s+account\\s+delete\\b",
+      "reason": "Storage account deletion destroys all blobs/queues/tables"
+    },
+    {
+      "$comment": "ASK: keyvault operations",
+      "action": "ask",
+      "pattern": "az\\s+keyvault\\s+(delete|purge)\\b",
+      "reason": "Key Vault deletion affects secrets/keys/certificates"
+    },
+    {
+      "$comment": "ASK: keyvault secret mutations",
+      "action": "ask",
+      "pattern": "az\\s+keyvault\\s+secret\\s+(set|delete|purge)\\b",
+      "reason": "Secret mutation affects dependent services"
+    },
+    {
+      "$comment": "ASK: AKS cluster delete",
+      "action": "ask",
+      "pattern": "az\\s+aks\\s+delete\\b",
+      "reason": "AKS deletion destroys cluster and all workloads"
+    },
+    {
+      "$comment": "ASK: SQL server/database delete",
+      "action": "ask",
+      "pattern": "az\\s+sql\\s+(server|db)\\s+delete\\b",
+      "reason": "SQL deletion destroys databases and data"
+    },
+    {
+      "$comment": "ASK: App Service / Function App delete",
+      "action": "ask",
+      "pattern": "az\\s+(functionapp|webapp)\\s+delete\\b",
+      "reason": "App deletion removes deployed application"
+    },
+    {
+      "$comment": "ASK: RBAC role assignment mutations",
+      "action": "ask",
+      "pattern": "az\\s+role\\s+assignment\\s+(create|delete)\\b",
+      "reason": "RBAC changes affect security permissions across resources"
+    },
+    {
+      "$comment": "ASK: Azure AD app/service principal mutations",
+      "action": "ask",
+      "pattern": "az\\s+ad\\s+(app|sp)\\s+(create|delete|update)\\b",
+      "reason": "AD identity mutations affect authentication/authorization"
+    },
+    {
+      "$comment": "ASK: DevOps project/repo mutations",
+      "action": "ask",
+      "pattern": "az\\s+devops\\s+project\\s+(create|delete)\\b",
+      "reason": "DevOps project mutations affect team workflows"
+    },
+    {
+      "$comment": "ASK: repos PR abandon",
+      "action": "ask",
+      "pattern": "az\\s+repos\\s+pr\\s+update\\s+.*--status\\s+abandoned",
+      "reason": "PR abandonment discards code review context"
+    },
+    {
+      "$comment": "ASK: pipeline run",
+      "action": "ask",
+      "pattern": "az\\s+pipelines\\s+run\\b",
+      "reason": "Pipeline run triggers deployment/build with side effects"
+    },
+    {
+      "$comment": "ASK: work-item update to terminal/destructive states (DEF-7: was uncovered, fell to default allow)",
+      "action": "ask",
+      "pattern": "az\\s+boards\\s+work-item\\s+update\\s+.*--state\\s+(Removed|Closed|Resolved)",
+      "reason": "Work item state change to terminal state (Removed/Closed/Resolved) — confirm intent"
+    },
+    {
+      "$comment": "ASK: work item delete",
+      "action": "ask",
+      "pattern": "az\\s+boards\\s+work-item\\s+delete\\b",
+      "reason": "Work item deletion removes project tracking data"
+    },
+    {
+      "$comment": "ASK: resource group create (cost implications)",
+      "action": "ask",
+      "pattern": "az\\s+group\\s+create\\b",
+      "reason": "Resource group creation sets up billing context"
+    },
+    {
+      "$comment": "ASK: any resource delete not caught above",
+      "action": "ask",
+      "pattern": "az\\s+\\S+\\s+delete\\b",
+      "reason": "Generic Azure resource deletion"
+    }
+  ]
+}

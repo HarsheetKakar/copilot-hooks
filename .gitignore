@@ -1,0 +1,33 @@
+# Runtime hook output. These files can contain local activity metadata.
+logs/
+state/
+
+# Diagnostic payload captures may contain raw tool arguments or personal data.
+payload-debug.jsonl
+*.debug.jsonl
+
+# Local backups and editor artifacts.
+*.bak
+*.bak-*
+*.tmp
+*.temp
+*.swp
+*.swo
+~$*
+
+# OS/editor metadata.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Audit logs
+copilot-audit.json
+copilot-notify.json
+# Squad: local config (machine-specific paths, never commit)
+.squad/config.json
+# Squad: local config/runtime state (machine-specific paths, never commit)
+.squad/.watch-instance.json
+.squad/.watch-pids
+.squad/.ralph-state.json
+.squad/ralph-circuit-breaker.json
